@@ -22,6 +22,7 @@ class SteppableCPU(CPU):
         self._symbol_table = {}
         self.halted = False
         self.error = None
+        self.waiting_for_input = False
         self.source_lines = code.strip().split('\n')
 
         program = [CPU._strip_comment(line).lower().strip()
@@ -32,9 +33,27 @@ class SteppableCPU(CPU):
         self._assemble(program)
         self.input_buffer = deque(input_buffer)
 
+    def needs_input(self):
+        """Check if current instruction is READ and input buffer is empty."""
+        if self.halted or self.error:
+            return False
+        instruction = self.memory[self.pc].instruction
+        operand = self.memory[self.pc].operand
+        # READ is load from address 30
+        is_read = (instruction == 'load' and operand == 30)
+        return is_read and len(self.input_buffer) == 0
+
     def step(self):
         if self.halted or self.error:
             return False
+
+        # Check if we need input before executing
+        if self.needs_input():
+            self.waiting_for_input = True
+            return False
+
+        self.waiting_for_input = False
+
         try:
             if self.memory[self.pc].instruction == 'halt':
                 self.halted = True
@@ -46,6 +65,11 @@ class SteppableCPU(CPU):
         except Exception as e:
             self.error = str(e)
             return False
+
+    def provide_input(self, value: int):
+        """Add a value to the input buffer."""
+        self.input_buffer.append(value)
+        self.waiting_for_input = False
 
     def run_all(self, max_steps=10000):
         steps = 0
@@ -63,12 +87,23 @@ class SteppableCPU(CPU):
             "halted": self.halted,
             "error": self.error,
             "symbols": self._symbol_table,
+            "waiting_for_input": self.waiting_for_input,
         }
 
 
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
+
+
+@app.route("/docs")
+def docs():
+    return send_from_directory("static", "docs.html")
+
+
+@app.route("/credits")
+def credits():
+    return send_from_directory("static", "credits.html")
 
 
 @app.route("/api/load", methods=["POST"])
@@ -119,6 +154,86 @@ def reset():
     if session_id in sessions:
         del sessions[session_id]
     return jsonify({"status": "reset"})
+
+
+@app.route("/api/memory", methods=["POST"])
+def update_memory():
+    """Update a memory location by address and decimal value."""
+    session_id = request.json.get("session", "default")
+    cpu = sessions.get(session_id)
+    if not cpu:
+        return jsonify({"error": "No program loaded"}), 400
+
+    address = request.json.get("address")
+    decimal = request.json.get("decimal")
+
+    if address is None or decimal is None:
+        return jsonify({"error": "Missing address or decimal"}), 400
+
+    if not isinstance(address, int) or address < 0 or address > 29:
+        return jsonify({"error": "Invalid address (must be 0-29)"}), 400
+
+    if not isinstance(decimal, int) or decimal < -128 or decimal > 127:
+        return jsonify({"error": "Invalid value (must be -128 to 127)"}), 400
+
+    try:
+        cpu.memory[address] = MemoryLocation(decimal=decimal)
+        return jsonify(cpu.to_state())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/api/register", methods=["POST"])
+def update_register():
+    """Update PC or AC register."""
+    session_id = request.json.get("session", "default")
+    cpu = sessions.get(session_id)
+    if not cpu:
+        return jsonify({"error": "No program loaded"}), 400
+
+    register = request.json.get("register")
+    value = request.json.get("value")
+
+    if register is None or value is None:
+        return jsonify({"error": "Missing register or value"}), 400
+
+    if register == "pc":
+        if not isinstance(value, int) or value < 0 or value > 29:
+            return jsonify({"error": "Invalid PC value (must be 0-29)"}), 400
+        cpu.pc = value
+    elif register == "ac":
+        if not isinstance(value, int) or value < -128 or value > 127:
+            return jsonify({"error": "Invalid AC value (must be -128 to 127)"}), 400
+        cpu.ac = value
+    else:
+        return jsonify({"error": "Invalid register (must be 'pc' or 'ac')"}), 400
+
+    return jsonify(cpu.to_state())
+
+
+@app.route("/api/input", methods=["POST"])
+def provide_input():
+    """Provide input value when CPU is waiting for input."""
+    session_id = request.json.get("session", "default")
+    cpu = sessions.get(session_id)
+    if not cpu:
+        return jsonify({"error": "No program loaded"}), 400
+
+    value = request.json.get("value")
+
+    if value is None:
+        return jsonify({"error": "Missing value"}), 400
+
+    try:
+        value = int(value)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid value (must be an integer)"}), 400
+
+    if value < -128 or value > 127:
+        return jsonify({"error": "Value out of range (must be -128 to 127)"}), 400
+
+    cpu.provide_input(value)
+    return jsonify(cpu.to_state())
 
 
 if __name__ == "__main__":

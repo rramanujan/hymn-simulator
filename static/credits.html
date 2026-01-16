@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYMN Simulator - Credits</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #1c1917;
+  --panel: #262220;
+  --panel-alt: #2d2926;
+  --border: #3d3835;
+  --border-light: #4a4541;
+  --text: #e8e4df;
+  --text-secondary: #c4beb6;
+  --muted: #7a746c;
+  --gold: #d4a34b;
+  --gold-dim: #a67c35;
+  --teal: #6b9b8f;
+  --teal-dim: #4a7268;
+  --rust: #c47a5a;
+  --rust-dim: #8f5a42;
+}
+
+:root.light {
+  --bg: #f5f3f0;
+  --panel: #ffffff;
+  --panel-alt: #faf9f7;
+  --border: #e0ddd8;
+  --border-light: #d0ccc6;
+  --text: #1c1917;
+  --text-secondary: #4a4541;
+  --muted: #7a746c;
+  --gold: #b8862f;
+  --gold-dim: #8a6420;
+  --teal: #4a7a6e;
+  --teal-dim: #3a5f55;
+  --rust: #a85d3f;
+  --rust-dim: #7a4530;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  margin-bottom: 24px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--bg);
+  font-size: 16px;
+  border-radius: 2px;
+}
+
+h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 3px;
+}
+
+.tagline {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-links a {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+  color: var(--text);
+  border-color: var(--border-light);
+  background: var(--panel-alt);
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+
+.theme-toggle:hover {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+
+.content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 32px;
+}
+
+h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.contributor {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.contributor:last-child {
+  margin-bottom: 0;
+}
+
+.contributor-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+
+.contributor-role {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.contributor-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.contributor-desc a {
+  color: var(--teal);
+  text-decoration: none;
+  border-bottom: 1px solid var(--teal-dim);
+  transition: all 0.15s;
+}
+
+.contributor-desc a:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold-dim);
+}
+
+.inspiration {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.inspiration h3 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.inspiration p {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.inspiration a {
+  color: var(--teal);
+  text-decoration: none;
+  border-bottom: 1px solid var(--teal-dim);
+  transition: all 0.15s;
+}
+
+.inspiration a:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold-dim);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .content { padding: 20px; }
+  .nav-links { display: none; }
+  .contributor { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <a href="/" class="logo">
+      <div class="logo-icon">H</div>
+      <div>
+        <h1>HYMN SIMULATOR</h1>
+        <div class="tagline">Credits</div>
+      </div>
+    </a>
+    <div class="header-right">
+      <nav class="nav-links">
+        <a href="/">Simulator</a>
+        <a href="/docs">Docs</a>
+        <a href="/credits" class="active">Credits</a>
+      </nav>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+        <span id="theme-icon">&#9790;</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+    <h2>Contributors</h2>
+
+    <div class="contributor">
+      <div class="contributor-name">Carl Burch</div>
+      <div class="contributor-role">Original SimHYMN</div>
+      <div class="contributor-desc">
+        Creator of the original <a href="https://cburch.com/socs/hymn/" target="_blank" rel="noopener">SimHYMN</a>
+        simulator and the HYMN instruction set.
+      </div>
+    </div>
+
+    <div class="contributor">
+      <div class="contributor-name">Dr. Raghuram Ramanujan</div>
+      <div class="contributor-role">Python Implementation</div>
+      <div class="contributor-desc">
+        Chair of Mathematics and Computer Science at
+        <a href="https://www.davidson.edu/people/raghu-ramanujan" target="_blank" rel="noopener">Davidson College</a>.
+        Wrote the SimHYMN code for Python.
+      </div>
+    </div>
+
+    <div class="contributor">
+      <div class="contributor-name"><a href="https://murtazanikzad.com/" target="_blank" rel="noopener" style="color: #4a7268;">Murtaza Nikzad</a></div>
+      <div class="contributor-role">Web Development</div>
+      <div class="contributor-desc">
+        Developed this web-based simulator interface.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function initTheme() {
+  const saved = localStorage.getItem('hymn-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-icon').innerHTML = '&#9728;';
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('hymn-theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-icon').innerHTML = isLight ? '&#9728;' : '&#9790;';
+}
+
+initTheme();
+document.getElementById('theme-toggle').onclick = toggleTheme;
+</script>
+
+</body>
+</html>

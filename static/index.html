@@ -10,7 +10,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* Warm Vintage Palette */
+  /* Dark Theme (Default) - Warm Vintage Palette */
   --bg: #1c1917;
   --panel: #262220;
   --panel-alt: #2d2926;
@@ -27,6 +27,26 @@
   --teal-dim: #4a7268;
   --rust: #c47a5a;
   --rust-dim: #8f5a42;
+}
+
+:root.light {
+  /* Light Theme */
+  --bg: #f5f3f0;
+  --panel: #ffffff;
+  --panel-alt: #faf9f7;
+  --border: #e0ddd8;
+  --border-light: #d0ccc6;
+
+  --text: #1c1917;
+  --text-secondary: #4a4541;
+  --muted: #7a746c;
+
+  --gold: #b8862f;
+  --gold-dim: #8a6420;
+  --teal: #4a7a6e;
+  --teal-dim: #3a5f55;
+  --rust: #a85d3f;
+  --rust-dim: #7a4530;
 }
 
 html, body {
@@ -278,6 +298,117 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+/* Clickable bits */
+.bit {
+  cursor: pointer;
+  padding: 1px 2px;
+  border-radius: 2px;
+  transition: all 0.1s;
+  display: inline-block;
+  min-width: 10px;
+  text-align: center;
+}
+
+.bit:hover {
+  background: var(--teal-dim);
+  color: var(--text);
+}
+
+.bit.one {
+  color: var(--gold);
+}
+
+.register-binary .bit {
+  padding: 2px 3px;
+  font-size: 12px;
+}
+
+.register-binary .bit:hover {
+  background: var(--gold-dim);
+}
+
+/* Input Prompt Overlay */
+.input-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-overlay.active {
+  display: flex;
+}
+
+.input-prompt {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.input-prompt h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.input-prompt p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.input-prompt-field {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-prompt-field .prompt-symbol {
+  font-size: 24px;
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.input-prompt-field input {
+  flex: 1;
+  max-width: 120px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  text-align: center;
+  outline: none;
+}
+
+.input-prompt-field input:focus {
+  border-color: var(--teal);
+}
+
+.input-prompt-field button {
+  padding: 12px 20px;
+  flex: none;
+}
+
+.input-prompt .hint {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+
 /* REGISTERS */
 .registers-panel {
   grid-column: 1 / -1;
@@ -419,6 +550,56 @@ button .shortcut {
   opacity: 0.8;
 }
 
+/* THEME TOGGLE */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-links a {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  border-color: var(--border-light);
+  background: var(--panel-alt);
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+
+.theme-toggle:hover {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   main {
@@ -429,6 +610,9 @@ button .shortcut {
   }
   .app {
     padding: 12px;
+  }
+  .nav-links {
+    display: none;
   }
 }
 </style>
@@ -444,7 +628,16 @@ button .shortcut {
         <div class="tagline">Hypothetical Machine</div>
       </div>
     </div>
-    <div class="status" id="status">Ready</div>
+    <div class="header-right">
+      <div class="status" id="status">Ready</div>
+      <nav class="nav-links">
+        <a href="/docs">Docs</a>
+        <a href="/credits">Credits</a>
+      </nav>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+        <span id="theme-icon">&#9790;</span>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -455,17 +648,7 @@ button .shortcut {
         <span class="badge">Assembly</span>
       </div>
       <div class="panel-body">
-        <textarea id="code" placeholder="# Add two numbers
-load 5
-add 6
-stor 7
-write
-halt
-
-# Data
-10
-25
-0" spellcheck="false"></textarea>
+        <textarea id="code" placeholder="# Type your assembly code here" spellcheck="false"></textarea>
       </div>
     </div>
 
@@ -501,8 +684,8 @@ halt
           <div class="register-binary">00000000</div>
         </div>
         <div class="register io">
-          <div class="register-label">Input Buffer</div>
-          <input type="text" class="io-input" id="input-buffer" placeholder="10, 25, 30">
+          <div class="register-label">Input History</div>
+          <div class="io-output" id="input-history"></div>
         </div>
         <div class="register io">
           <div class="register-label">Output</div>
@@ -532,7 +715,39 @@ halt
   </footer>
 </div>
 
+<!-- Input Prompt Overlay -->
+<div class="input-overlay" id="input-overlay">
+  <div class="input-prompt">
+    <h3>Input Required</h3>
+    <p>The READ instruction needs a value from input.</p>
+    <div class="input-prompt-field">
+      <span class="prompt-symbol">?</span>
+      <input type="number" id="input-value" placeholder="0" min="-128" max="127">
+      <button id="btn-submit-input" class="primary">Enter</button>
+    </div>
+    <div class="hint">Enter a value between -128 and 127</div>
+  </div>
+</div>
+
 <script>
+// Theme handling
+function initTheme() {
+  const saved = localStorage.getItem('hymn-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-icon').innerHTML = '&#9728;'; // sun
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('hymn-theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-icon').innerHTML = isLight ? '&#9728;' : '&#9790;'; // sun/moon
+}
+
+// Initialize theme immediately
+initTheme();
+
 let state = null;
 let prevAC = 0;
 
@@ -542,6 +757,123 @@ function toBinary(n, bits) {
   if (n < 0) n = (1 << bits) + n;
   return n.toString(2).padStart(bits, '0');
 }
+
+function fromBinary(binStr, bits) {
+  let val = parseInt(binStr, 2);
+  // Handle signed conversion for 8-bit values
+  if (bits === 8 && val >= 128) {
+    val = val - 256;
+  }
+  return val;
+}
+
+function renderClickableBits(binary, onClick) {
+  return binary.split('').map((bit, idx) => {
+    const span = document.createElement('span');
+    span.className = 'bit' + (bit === '1' ? ' one' : '');
+    span.textContent = bit;
+    span.onclick = (e) => {
+      e.stopPropagation();
+      onClick(idx);
+    };
+    return span;
+  });
+}
+
+async function updateMemoryBit(address, bitIndex) {
+  const mem = state.memory[address];
+  const binary = toBinary(mem.decimal, 8);
+  const bits = binary.split('');
+  bits[bitIndex] = bits[bitIndex] === '0' ? '1' : '0';
+  const newBinary = bits.join('');
+  const newDecimal = fromBinary(newBinary, 8);
+
+  try {
+    const res = await fetch('/api/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, decimal: newDecimal })
+    });
+    const data = await res.json();
+    if (!data.error) {
+      updateUI(data);
+    }
+  } catch (e) {
+    console.error('Failed to update memory:', e);
+  }
+}
+
+async function updateRegisterBit(register, bitIndex) {
+  const bits = register === 'pc' ? 5 : 8;
+  const currentValue = register === 'pc' ? state.pc : state.ac;
+  const binary = toBinary(currentValue, bits);
+  const bitArr = binary.split('');
+  bitArr[bitIndex] = bitArr[bitIndex] === '0' ? '1' : '0';
+  const newBinary = bitArr.join('');
+  const newValue = fromBinary(newBinary, bits);
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ register, value: newValue })
+    });
+    const data = await res.json();
+    if (!data.error) {
+      updateUI(data);
+    }
+  } catch (e) {
+    console.error('Failed to update register:', e);
+  }
+}
+
+// Input prompt handling
+function showInputPrompt() {
+  $('input-overlay').classList.add('active');
+  $('input-value').value = '';
+  $('input-value').focus();
+}
+
+function hideInputPrompt() {
+  $('input-overlay').classList.remove('active');
+}
+
+async function submitInput() {
+  const inputEl = $('input-value');
+  const value = parseInt(inputEl.value, 10);
+
+  if (isNaN(value) || value < -128 || value > 127) {
+    inputEl.style.borderColor = 'var(--rust)';
+    setTimeout(() => inputEl.style.borderColor = '', 500);
+    return;
+  }
+
+  hideInputPrompt();
+  inputHistory.push(value);
+  $('input-history').textContent = inputHistory.join(', ');
+
+  try {
+    const res = await fetch('/api/input', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value })
+    });
+    const data = await res.json();
+    if (!data.error) {
+      updateUI(data);
+      // If we were running, continue running after input
+      if (wasRunning) {
+        wasRunning = false;
+        run();
+      }
+    }
+  } catch (e) {
+    console.error('Failed to submit input:', e);
+  }
+}
+
+let wasRunning = false;
+let inputHistory = [];
 
 function initMemory() {
   const container = $('memory');
@@ -575,7 +907,14 @@ function updateMemory(data) {
 
     row.querySelector('.mem-instr').textContent = isData ? `data` : mem.instr;
     row.querySelector('.mem-dec').textContent = mem.decimal;
-    row.querySelector('.mem-bin').textContent = toBinary(mem.decimal, 8);
+
+    // Render clickable bits
+    const binCell = row.querySelector('.mem-bin');
+    binCell.innerHTML = '';
+    const binary = toBinary(mem.decimal, 8);
+    const address = i;
+    const bitSpans = renderClickableBits(binary, (bitIndex) => updateMemoryBit(address, bitIndex));
+    bitSpans.forEach(span => binCell.appendChild(span));
   }
 
   if (!data.halted) {
@@ -587,11 +926,23 @@ function updateMemory(data) {
 function updateRegisters(data) {
   const pcReg = $('reg-pc');
   pcReg.querySelector('.register-value').textContent = data.pc;
-  pcReg.querySelector('.register-binary').textContent = toBinary(data.pc, 5);
+
+  // Render clickable PC bits
+  const pcBinEl = pcReg.querySelector('.register-binary');
+  pcBinEl.innerHTML = '';
+  const pcBinary = toBinary(data.pc, 5);
+  const pcBitSpans = renderClickableBits(pcBinary, (bitIndex) => updateRegisterBit('pc', bitIndex));
+  pcBitSpans.forEach(span => pcBinEl.appendChild(span));
 
   const acReg = $('reg-ac');
   acReg.querySelector('.register-value').textContent = data.ac;
-  acReg.querySelector('.register-binary').textContent = toBinary(data.ac, 8);
+
+  // Render clickable AC bits
+  const acBinEl = acReg.querySelector('.register-binary');
+  acBinEl.innerHTML = '';
+  const acBinary = toBinary(data.ac, 8);
+  const acBitSpans = renderClickableBits(acBinary, (bitIndex) => updateRegisterBit('ac', bitIndex));
+  acBitSpans.forEach(span => acBinEl.appendChild(span));
 
   if (state && data.ac !== prevAC) {
     acReg.classList.add('changed');
@@ -610,6 +961,9 @@ function updateStatus(data) {
   } else if (data.halted) {
     status.textContent = 'Halted';
     status.className = 'status halted';
+  } else if (data.waiting_for_input) {
+    status.textContent = 'Waiting for input...';
+    status.className = 'status running';
   } else {
     const mem = data.memory[data.pc];
     status.textContent = `Executing: ${mem.instr}`;
@@ -623,8 +977,15 @@ function updateUI(data) {
   updateRegisters(data);
   updateStatus(data);
 
-  $('btn-step').disabled = data.halted || data.error;
-  $('btn-run').disabled = data.halted || data.error;
+  // Handle input prompt
+  if (data.waiting_for_input) {
+    showInputPrompt();
+  } else {
+    hideInputPrompt();
+  }
+
+  $('btn-step').disabled = data.halted || data.error || data.waiting_for_input;
+  $('btn-run').disabled = data.halted || data.error || data.waiting_for_input;
 }
 
 function setMode(mode) {
@@ -635,7 +996,6 @@ function setMode(mode) {
     $('btn-run').disabled = true;
     $('btn-reset').disabled = true;
     $('code').disabled = false;
-    $('input-buffer').disabled = false;
     $('status').textContent = 'Ready';
     $('status').className = 'status';
   } else {
@@ -645,20 +1005,17 @@ function setMode(mode) {
     $('btn-run').disabled = false;
     $('btn-reset').disabled = false;
     $('code').disabled = true;
-    $('input-buffer').disabled = true;
   }
 }
 
 async function load() {
   const code = $('code').value;
-  const inputStr = $('input-buffer').value;
-  const input = inputStr.split(',').map(s => s.trim()).filter(s => s);
 
   try {
     const res = await fetch('/api/load', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, input })
+      body: JSON.stringify({ code, input: [] })
     });
     const data = await res.json();
 
@@ -670,6 +1027,8 @@ async function load() {
 
     prevAC = 0;
     state = null;
+    inputHistory = [];
+    $('input-history').textContent = '';
     setMode('loaded');
     updateUI(data);
 
@@ -697,6 +1056,7 @@ async function step() {
 }
 
 async function run() {
+  wasRunning = true;
   try {
     const res = await fetch('/api/run', {
       method: 'POST',
@@ -705,9 +1065,14 @@ async function run() {
     });
     const data = await res.json();
     if (!data.error || state) {
+      // If waiting for input, keep wasRunning true; otherwise reset
+      if (!data.waiting_for_input) {
+        wasRunning = false;
+      }
       updateUI(data);
     }
   } catch (e) {
+    wasRunning = false;
     $('status').textContent = 'Connection error';
     $('status').className = 'status halted';
   }
@@ -721,7 +1086,11 @@ async function reset() {
   });
   state = null;
   prevAC = 0;
+  wasRunning = false;
+  inputHistory = [];
   $('output').textContent = '';
+  $('input-history').textContent = '';
+  hideInputPrompt();
   initMemory();
   setMode('edit');
 }
@@ -730,6 +1099,14 @@ $('btn-load').onclick = load;
 $('btn-step').onclick = step;
 $('btn-run').onclick = run;
 $('btn-reset').onclick = reset;
+$('theme-toggle').onclick = toggleTheme;
+$('btn-submit-input').onclick = submitInput;
+$('input-value').onkeydown = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitInput();
+  }
+};
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.metaKey) {

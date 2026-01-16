@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYMN Simulator - Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #1c1917;
+  --panel: #262220;
+  --panel-alt: #2d2926;
+  --border: #3d3835;
+  --border-light: #4a4541;
+  --text: #e8e4df;
+  --text-secondary: #c4beb6;
+  --muted: #7a746c;
+  --gold: #d4a34b;
+  --gold-dim: #a67c35;
+  --teal: #6b9b8f;
+  --teal-dim: #4a7268;
+  --rust: #c47a5a;
+  --rust-dim: #8f5a42;
+}
+
+:root.light {
+  --bg: #f5f3f0;
+  --panel: #ffffff;
+  --panel-alt: #faf9f7;
+  --border: #e0ddd8;
+  --border-light: #d0ccc6;
+  --text: #1c1917;
+  --text-secondary: #4a4541;
+  --muted: #7a746c;
+  --gold: #b8862f;
+  --gold-dim: #8a6420;
+  --teal: #4a7a6e;
+  --teal-dim: #3a5f55;
+  --rust: #a85d3f;
+  --rust-dim: #7a4530;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  margin-bottom: 24px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--bg);
+  font-size: 16px;
+  border-radius: 2px;
+}
+
+h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 3px;
+}
+
+.tagline {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-links a {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+  color: var(--text);
+  border-color: var(--border-light);
+  background: var(--panel-alt);
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+
+.theme-toggle:hover {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+
+.content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 32px;
+}
+
+h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  margin: 24px 0 12px;
+}
+
+p {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
+
+section {
+  margin-bottom: 40px;
+}
+
+section:last-child {
+  margin-bottom: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 12px;
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+
+th {
+  background: var(--panel-alt);
+  color: var(--text);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+td {
+  color: var(--text-secondary);
+}
+
+.opcode {
+  font-family: inherit;
+  color: var(--rust);
+  background: var(--panel-alt);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.instr {
+  color: var(--teal);
+  font-weight: 500;
+}
+
+code {
+  font-family: inherit;
+  background: var(--panel-alt);
+  padding: 2px 6px;
+  border-radius: 2px;
+  color: var(--gold);
+}
+
+pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  margin: 16px 0;
+  overflow-x: auto;
+  color: var(--text-secondary);
+}
+
+pre .comment { color: var(--muted); }
+pre .instr { color: var(--teal); }
+pre .number { color: var(--gold); }
+
+ul {
+  margin: 16px 0;
+  padding-left: 24px;
+  color: var(--text-secondary);
+}
+
+li {
+  margin-bottom: 8px;
+}
+
+.note {
+  background: var(--panel-alt);
+  border-left: 3px solid var(--gold);
+  padding: 12px 16px;
+  margin: 16px 0;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .content { padding: 20px; }
+  .nav-links { display: none; }
+  table { font-size: 11px; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <a href="/" class="logo">
+      <div class="logo-icon">H</div>
+      <div>
+        <h1>HYMN SIMULATOR</h1>
+        <div class="tagline">Documentation</div>
+      </div>
+    </a>
+    <div class="header-right">
+      <nav class="nav-links">
+        <a href="/">Simulator</a>
+        <a href="/docs" class="active">Docs</a>
+        <a href="/credits">Credits</a>
+      </nav>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+        <span id="theme-icon">&#9790;</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+    <section>
+      <h2>Overview</h2>
+      <p>
+        HYMN (HYpothetical MachiNe) is a simple 8-instruction CPU simulator designed for learning
+        how a computer executes programs at the machine level. It provides a minimal but complete
+        environment to understand assembly language concepts.
+      </p>
+    </section>
+
+    <section>
+      <h2>Architecture</h2>
+
+      <h3>Registers</h3>
+      <table>
+        <tr>
+          <th>Register</th>
+          <th>Size</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td><strong>PC</strong> (Program Counter)</td>
+          <td>5 bits</td>
+          <td>Points to the next instruction to execute (addresses 0-29)</td>
+        </tr>
+        <tr>
+          <td><strong>AC</strong> (Accumulator)</td>
+          <td>8 bits</td>
+          <td>Main register for arithmetic operations (values -128 to 127)</td>
+        </tr>
+      </table>
+
+      <h3>Memory</h3>
+      <p>
+        The system has <strong>30 memory locations</strong> (addresses 0-29), each storing an 8-bit value.
+        Each location can hold either an instruction or a data value.
+      </p>
+
+      <div class="note">
+        <strong>Memory-Mapped I/O:</strong> Addresses 30 and 31 are special I/O addresses.
+        Address 30 reads from the input buffer, and address 31 writes to the output.
+      </div>
+    </section>
+
+    <section>
+      <h2>Instruction Set</h2>
+      <p>
+        Each instruction is 8 bits: a 3-bit opcode followed by a 5-bit operand (memory address).
+      </p>
+
+      <table>
+        <tr>
+          <th>Opcode</th>
+          <th>Binary</th>
+          <th>Instruction</th>
+          <th>Operation</th>
+        </tr>
+        <tr>
+          <td><span class="opcode">0</span></td>
+          <td><code>000</code></td>
+          <td><span class="instr">HALT</span></td>
+          <td>Stop execution</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">1</span></td>
+          <td><code>001</code></td>
+          <td><span class="instr">JUMP addr</span></td>
+          <td>Set PC to addr (unconditional jump)</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">2</span></td>
+          <td><code>010</code></td>
+          <td><span class="instr">JZER addr</span></td>
+          <td>Jump to addr if AC equals zero</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">3</span></td>
+          <td><code>011</code></td>
+          <td><span class="instr">JPOS addr</span></td>
+          <td>Jump to addr if AC is positive</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">4</span></td>
+          <td><code>100</code></td>
+          <td><span class="instr">LOAD addr</span></td>
+          <td>Load value from memory[addr] into AC</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">5</span></td>
+          <td><code>101</code></td>
+          <td><span class="instr">STOR addr</span></td>
+          <td>Store AC value into memory[addr]</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">6</span></td>
+          <td><code>110</code></td>
+          <td><span class="instr">ADD addr</span></td>
+          <td>Add memory[addr] to AC</td>
+        </tr>
+        <tr>
+          <td><span class="opcode">7</span></td>
+          <td><code>111</code></td>
+          <td><span class="instr">SUB addr</span></td>
+          <td>Subtract memory[addr] from AC</td>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Pseudo-Operations</h2>
+      <p>
+        The assembler recognizes these shortcuts that expand to real instructions:
+      </p>
+      <table>
+        <tr>
+          <th>Pseudo-op</th>
+          <th>Expands To</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td><span class="instr">READ</span></td>
+          <td><code>LOAD 30</code></td>
+          <td>Read a value from input into AC</td>
+        </tr>
+        <tr>
+          <td><span class="instr">WRITE</span></td>
+          <td><code>STOR 31</code></td>
+          <td>Write AC value to output</td>
+        </tr>
+        <tr>
+          <td><span class="instr">HALT</span></td>
+          <td><code>HALT 0</code></td>
+          <td>Stop execution (operand ignored)</td>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Assembly Syntax</h2>
+
+      <h3>Instructions</h3>
+      <p>Each line contains an instruction followed by its operand (a memory address):</p>
+      <pre><span class="instr">load</span> <span class="number">5</span>
+<span class="instr">add</span> <span class="number">6</span>
+<span class="instr">stor</span> <span class="number">7</span></pre>
+
+      <h3>Labels</h3>
+      <p>Labels name memory addresses, making code easier to read and modify:</p>
+      <pre><span class="instr">loop:</span> <span class="instr">load</span> counter
+      <span class="instr">sub</span> one
+      <span class="instr">jpos</span> loop</pre>
+
+      <h3>Comments</h3>
+      <p>Everything after <code>#</code> is ignored by the assembler:</p>
+      <pre><span class="instr">load</span> <span class="number">5</span>   <span class="comment"># your comment here</span></pre>
+
+      <h3>Data Values</h3>
+      <p>Plain numbers are stored as data in memory. Place them after your instructions:</p>
+      <pre><span class="instr">load</span> <span class="number">2</span>
+<span class="instr">halt</span>
+<span class="number">42</span></pre>
+
+      <h3>Binary Operands</h3>
+      <p>Operands can be written in binary (5-bit):</p>
+      <pre><span class="instr">load</span> <span class="number">00101</span></pre>
+    </section>
+
+    <section>
+      <h2>Example Program</h2>
+      <p>This program adds two numbers and outputs the result:</p>
+      <pre><span class="instr">load</span> <span class="number">5</span>
+<span class="instr">add</span> <span class="number">6</span>
+<span class="instr">stor</span> <span class="number">7</span>
+<span class="instr">write</span>
+<span class="instr">halt</span>
+
+<span class="number">10</span>
+<span class="number">25</span>
+<span class="number">0</span></pre>
+      <p>
+        The first five lines are instructions. The last three lines are data: 10 is stored at address 5,
+        25 at address 6, and 0 at address 7. The program loads 10, adds 25, stores the result (35),
+        outputs it, and halts.
+      </p>
+    </section>
+
+    <section>
+      <h2>Interactive Features</h2>
+      <ul>
+        <li><strong>Click binary bits</strong> to flip them (0 ↔ 1) in memory, PC, or AC</li>
+        <li><strong>Step</strong> executes one instruction at a time</li>
+        <li><strong>Run</strong> executes until HALT is reached</li>
+        <li>When a <strong>READ</strong> instruction executes, you'll be prompted to enter a value</li>
+      </ul>
+
+      <h3>Keyboard Shortcuts</h3>
+      <table>
+        <tr>
+          <th>Shortcut</th>
+          <th>Action</th>
+        </tr>
+        <tr>
+          <td><code>Cmd + Enter</code></td>
+          <td>Load program</td>
+        </tr>
+        <tr>
+          <td><code>Cmd + S</code></td>
+          <td>Step one instruction</td>
+        </tr>
+        <tr>
+          <td><code>Cmd + R</code></td>
+          <td>Run to completion</td>
+        </tr>
+        <tr>
+          <td><code>Escape</code></td>
+          <td>Reset</td>
+        </tr>
+      </table>
+    </section>
+  </div>
+</div>
+
+<script>
+function initTheme() {
+  const saved = localStorage.getItem('hymn-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-icon').innerHTML = '&#9728;';
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('hymn-theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-icon').innerHTML = isLight ? '&#9728;' : '&#9790;';
+}
+
+initTheme();
+document.getElementById('theme-toggle').onclick = toggleTheme;
+</script>
+
+</body>
+</html>
