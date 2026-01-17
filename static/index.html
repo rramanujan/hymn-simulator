@@ -1128,6 +1128,24 @@ document.addEventListener('keydown', e => {
 
 initMemory();
 setMode('edit');
+
+// Initialize CPU state so bits are editable from the start
+(async function initState() {
+  try {
+    const res = await fetch('/api/load', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: 'halt', input: [] })
+    });
+    const data = await res.json();
+    if (!data.error) {
+      state = data;
+      updateMemory(data);
+      updateRegisters(data);
+    }
+  } catch (e) {}
+  setMode('edit');
+})();
 </script>
 
 </body>
