@@ -750,8 +750,31 @@ initTheme();
 
 let state = null;
 let prevAC = 0;
+const SESSION_KEY = 'hymn-session-id';
+const sessionId = getOrCreateSessionId();
 
 const $ = id => document.getElementById(id);
+
+function getOrCreateSessionId() {
+  let id = sessionStorage.getItem(SESSION_KEY);
+  if (id) return id;
+
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    id = window.crypto.randomUUID();
+  } else {
+    id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+  sessionStorage.setItem(SESSION_KEY, id);
+  return id;
+}
+
+async function apiPost(path, payload = {}) {
+  return fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...payload, session: sessionId })
+  });
+}
 
 function toBinary(n, bits) {
   if (n < 0) n = (1 << bits) + n;
@@ -789,11 +812,7 @@ async function updateMemoryBit(address, bitIndex) {
   const newDecimal = fromBinary(newBinary, 8);
 
   try {
-    const res = await fetch('/api/memory', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, decimal: newDecimal })
-    });
+    const res = await apiPost('/api/memory', { address, decimal: newDecimal });
     const data = await res.json();
     if (!data.error) {
       updateUI(data);
@@ -813,11 +832,7 @@ async function updateRegisterBit(register, bitIndex) {
   const newValue = fromBinary(newBinary, bits);
 
   try {
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ register, value: newValue })
-    });
+    const res = await apiPost('/api/register', { register, value: newValue });
     const data = await res.json();
     if (!data.error) {
       updateUI(data);
@@ -853,11 +868,7 @@ async function submitInput() {
   $('input-history').textContent = inputHistory.join(', ');
 
   try {
-    const res = await fetch('/api/input', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value })
-    });
+    const res = await apiPost('/api/input', { value });
     const data = await res.json();
     if (!data.error) {
       updateUI(data);
@@ -1012,11 +1023,7 @@ async function load() {
   const code = $('code').value;
 
   try {
-    const res = await fetch('/api/load', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, input: [] })
-    });
+    const res = await apiPost('/api/load', { code, input: [] });
     const data = await res.json();
 
     if (data.error) {
@@ -1040,15 +1047,14 @@ async function load() {
 
 async function step() {
   try {
-    const res = await fetch('/api/step', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
+    const res = await apiPost('/api/step');
     const data = await res.json();
-    if (!data.error || state) {
-      updateUI(data);
+    if (data.error) {
+      $('status').textContent = data.error;
+      $('status').className = 'status halted';
+      return;
     }
+    updateUI(data);
   } catch (e) {
     $('status').textContent = 'Connection error';
     $('status').className = 'status halted';
@@ -1058,19 +1064,19 @@ async function step() {
 async function run() {
   wasRunning = true;
   try {
-    const res = await fetch('/api/run', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
+    const res = await apiPost('/api/run');
     const data = await res.json();
-    if (!data.error || state) {
-      // If waiting for input, keep wasRunning true; otherwise reset
-      if (!data.waiting_for_input) {
-        wasRunning = false;
-      }
-      updateUI(data);
+    if (data.error) {
+      wasRunning = false;
+      $('status').textContent = data.error;
+      $('status').className = 'status halted';
+      return;
     }
+    // If waiting for input, keep wasRunning true; otherwise reset
+    if (!data.waiting_for_input) {
+      wasRunning = false;
+    }
+    updateUI(data);
   } catch (e) {
     wasRunning = false;
     $('status').textContent = 'Connection error';
@@ -1079,11 +1085,7 @@ async function run() {
 }
 
 async function reset() {
-  await fetch('/api/reset', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({})
-  });
+  await apiPost('/api/reset');
   state = null;
   prevAC = 0;
   wasRunning = false;
@@ -1132,11 +1134,7 @@ setMode('edit');
 // Initialize CPU state so bits are editable from the start
 (async function initState() {
   try {
-    const res = await fetch('/api/load', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: 'halt', input: [] })
-    });
+    const res = await apiPost('/api/load', { code: 'halt', input: [] });
     const data = await res.json();
     if (!data.error) {
       state = data;

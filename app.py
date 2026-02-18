@@ -4,11 +4,87 @@
 from flask import Flask, request, jsonify, send_from_directory
 from simulator import CPU, MemoryLocation
 from collections import deque
+from threading import RLock
+from time import monotonic, time
 import os
 
 app = Flask(__name__, static_folder="static")
 
-sessions = {}
+
+MAX_SESSIONS = int(os.environ.get("MAX_SESSIONS", "1000"))
+SESSION_TTL_SECONDS = int(os.environ.get("SESSION_TTL_SECONDS", "7200"))
+EXECUTION_TIMEOUT_SECONDS = int(os.environ.get("EXECUTION_TIMEOUT_SECONDS", "60"))
+
+
+class SessionStore:
+    """Thread-safe in-memory CPU session store with bounded retention."""
+
+    def __init__(self, max_sessions=MAX_SESSIONS, ttl_seconds=SESSION_TTL_SECONDS):
+        self._sessions = {}
+        self._lock = RLock()
+        self._max_sessions = max_sessions
+        self._ttl_seconds = ttl_seconds
+
+    def _cleanup_locked(self, now):
+        stale_ids = [
+            sid for sid, (_, last_seen) in self._sessions.items()
+            if now - last_seen > self._ttl_seconds
+        ]
+        for sid in stale_ids:
+            del self._sessions[sid]
+
+        if len(self._sessions) <= self._max_sessions:
+            return
+
+        # Evict least-recently-used sessions when above capacity.
+        sorted_sessions = sorted(self._sessions.items(), key=lambda item: item[1][1])
+        overflow = len(self._sessions) - self._max_sessions
+        for sid, _ in sorted_sessions[:overflow]:
+            del self._sessions[sid]
+
+    def put(self, session_id, cpu):
+        with self._lock:
+            now = time()
+            self._cleanup_locked(now)
+            self._sessions[session_id] = (cpu, now)
+
+    def get(self, session_id):
+        with self._lock:
+            current = self._sessions.get(session_id)
+            if not current:
+                return None
+            cpu, _ = current
+            self._sessions[session_id] = (cpu, time())
+            return cpu
+
+    def delete(self, session_id):
+        with self._lock:
+            self._sessions.pop(session_id, None)
+
+
+sessions = SessionStore()
+
+
+def _request_json():
+    return request.get_json(silent=True) or {}
+
+
+def _get_session_id(data):
+    session_id = data.get("session")
+    if not isinstance(session_id, str) or not session_id.strip():
+        return None
+    return session_id.strip()
+
+
+def _cpu_from_request(data):
+    session_id = _get_session_id(data)
+    if session_id is None:
+        return None, None, (jsonify({"error": "Missing session ID"}), 400)
+
+    cpu = sessions.get(session_id)
+    if not cpu:
+        return None, None, (jsonify({"error": "No program loaded"}), 400)
+    return session_id, cpu, None
 
 
 class SteppableCPU(CPU):
@@ -71,10 +147,14 @@ class SteppableCPU(CPU):
         self.input_buffer.append(value)
         self.waiting_for_input = False
 
-    def run_all(self, max_steps=10000):
+    def run_all(self, timeout_seconds=EXECUTION_TIMEOUT_SECONDS):
+        start = monotonic()
         steps = 0
-        while steps < max_steps and self.step():
+        while self.step():
             steps += 1
+            if monotonic() - start >= timeout_seconds:
+                self.error = f"Execution timed out after {timeout_seconds} seconds"
+                break
         return steps
 
     def to_state(self):
@@ -108,10 +188,13 @@ def credits():
 
 @app.route("/api/load", methods=["POST"])
 def load():
-    data = request.json
+    data = _request_json()
     code = data.get("code", "")
     input_buf = data.get("input", [])
-    session_id = data.get("session", "default")
+    session_id = _get_session_id(data)
+
+    if session_id is None:
+        return jsonify({"error": "Missing session ID"}), 400
 
     try:
         input_buf = [int(x) for x in input_buf if str(x).strip()]
@@ -124,48 +207,48 @@ def load():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-    sessions[session_id] = cpu
+    sessions.put(session_id, cpu)
     return jsonify(cpu.to_state())
 
 
 @app.route("/api/step", methods=["POST"])
 def step():
-    session_id = request.json.get("session", "default")
-    cpu = sessions.get(session_id)
-    if not cpu:
-        return jsonify({"error": "No program loaded"}), 400
+    _, cpu, error = _cpu_from_request(_request_json())
+    if error:
+        return error
     cpu.step()
     return jsonify(cpu.to_state())
 
 
 @app.route("/api/run", methods=["POST"])
 def run():
-    session_id = request.json.get("session", "default")
-    cpu = sessions.get(session_id)
-    if not cpu:
-        return jsonify({"error": "No program loaded"}), 400
-    cpu.run_all()
+    _, cpu, error = _cpu_from_request(_request_json())
+    if error:
+        return error
+    cpu.run_all(timeout_seconds=EXECUTION_TIMEOUT_SECONDS)
     return jsonify(cpu.to_state())
 
 
 @app.route("/api/reset", methods=["POST"])
 def reset():
-    session_id = request.json.get("session", "default")
-    if session_id in sessions:
-        del sessions[session_id]
+    data = _request_json()
+    session_id = _get_session_id(data)
+    if session_id is None:
+        return jsonify({"error": "Missing session ID"}), 400
+    sessions.delete(session_id)
     return jsonify({"status": "reset"})
 
 
 @app.route("/api/memory", methods=["POST"])
 def update_memory():
     """Update a memory location by address and decimal value."""
-    session_id = request.json.get("session", "default")
-    cpu = sessions.get(session_id)
-    if not cpu:
-        return jsonify({"error": "No program loaded"}), 400
+    data = _request_json()
+    _, cpu, error = _cpu_from_request(data)
+    if error:
+        return error
 
-    address = request.json.get("address")
-    decimal = request.json.get("decimal")
+    address = data.get("address")
+    decimal = data.get("decimal")
 
     if address is None or decimal is None:
         return jsonify({"error": "Missing address or decimal"}), 400
@@ -186,13 +269,13 @@ def update_memory():
 @app.route("/api/register", methods=["POST"])
 def update_register():
     """Update PC or AC register."""
-    session_id = request.json.get("session", "default")
-    cpu = sessions.get(session_id)
-    if not cpu:
-        return jsonify({"error": "No program loaded"}), 400
+    data = _request_json()
+    _, cpu, error = _cpu_from_request(data)
+    if error:
+        return error
 
-    register = request.json.get("register")
-    value = request.json.get("value")
+    register = data.get("register")
+    value = data.get("value")
 
     if register is None or value is None:
         return jsonify({"error": "Missing register or value"}), 400
@@ -214,12 +297,12 @@ def update_register():
 @app.route("/api/input", methods=["POST"])
 def provide_input():
     """Provide input value when CPU is waiting for input."""
-    session_id = request.json.get("session", "default")
-    cpu = sessions.get(session_id)
-    if not cpu:
-        return jsonify({"error": "No program loaded"}), 400
+    data = _request_json()
+    _, cpu, error = _cpu_from_request(data)
+    if error:
+        return error
 
-    value = request.json.get("value")
+    value = data.get("value")
 
     if value is None:
         return jsonify({"error": "Missing value"}), 400
