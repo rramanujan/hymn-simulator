@@ -228,7 +228,7 @@ main {
 
 .memory-row {
   display: grid;
-  grid-template-columns: 44px 1fr 56px 80px;
+  grid-template-columns: 42px minmax(0, 1fr) 52px 112px;
   border-bottom: 1px solid var(--border);
   transition: background 0.15s;
 }
@@ -264,7 +264,7 @@ main {
 }
 
 .mem-addr, .mem-instr, .mem-dec, .mem-bin {
-  padding: 10px 12px;
+  padding: 10px 8px;
 }
 
 .mem-addr {
@@ -276,7 +276,7 @@ main {
 
 .mem-instr {
   color: var(--teal);
-  padding-left: 16px;
+  padding-left: 10px;
 }
 
 .memory-row.is-data .mem-instr {
@@ -293,7 +293,7 @@ main {
 .mem-bin {
   font-size: 11px;
   color: var(--muted);
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
   border-left: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -317,6 +317,11 @@ main {
 
 .bit.one {
   color: var(--gold);
+}
+
+.mem-bin .bit {
+  min-width: 8px;
+  padding: 0 1px;
 }
 
 .bit-gap {
