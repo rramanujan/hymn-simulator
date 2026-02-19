@@ -763,29 +763,14 @@ initTheme();
 
 let state = null;
 let prevAC = 0;
-const SESSION_KEY = 'hymn-session-id';
-const sessionId = getOrCreateSessionId();
 
 const $ = id => document.getElementById(id);
-
-function getOrCreateSessionId() {
-  let id = sessionStorage.getItem(SESSION_KEY);
-  if (id) return id;
-
-  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-    id = window.crypto.randomUUID();
-  } else {
-    id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  }
-  sessionStorage.setItem(SESSION_KEY, id);
-  return id;
-}
 
 async function apiPost(path, payload = {}) {
   return fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, session: sessionId })
+    body: JSON.stringify(payload)
   });
 }
 
