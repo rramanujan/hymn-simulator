@@ -696,7 +696,7 @@ button .shortcut {
           <span class="badge">Assembly</span>
         </div>
         <div class="panel-header-actions">
-          <input id="file-upload" type="file" accept=".asm,.hymn,.txt,text/plain" style="display:none">
+          <input id="file-upload" type="file" style="display:none">
           <button id="btn-upload" class="mini-btn" type="button">Upload</button>
           <button id="btn-download" class="mini-btn" type="button">Download</button>
         </div>
@@ -942,7 +942,7 @@ function downloadCodeFile() {
 
   localStorage.setItem(LAST_FILENAME_KEY, filename);
 
-  const blob = new Blob([$('code').value], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([$('code').value], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
