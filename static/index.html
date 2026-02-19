@@ -296,6 +296,7 @@ main {
   letter-spacing: 0.5px;
   border-left: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* Clickable bits */
@@ -316,6 +317,12 @@ main {
 
 .bit.one {
   color: var(--gold);
+}
+
+.bit-gap {
+  display: inline-block;
+  width: 6px;
+  pointer-events: none;
 }
 
 .register-binary .bit {
@@ -451,6 +458,7 @@ main {
   margin-top: 8px;
   letter-spacing: 1px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .register.changed .register-value {
@@ -790,8 +798,11 @@ function fromBinary(binStr, bits) {
   return val;
 }
 
-function renderClickableBits(binary, onClick) {
-  return binary.split('').map((bit, idx) => {
+function renderClickableBits(binary, onClick, groupSize = 0) {
+  const nodes = [];
+  const chars = binary.split('');
+
+  chars.forEach((bit, idx) => {
     const span = document.createElement('span');
     span.className = 'bit' + (bit === '1' ? ' one' : '');
     span.textContent = bit;
@@ -799,8 +810,17 @@ function renderClickableBits(binary, onClick) {
       e.stopPropagation();
       onClick(idx);
     };
-    return span;
+    nodes.push(span);
+
+    if (groupSize > 0 && idx < chars.length - 1 && (idx + 1) % groupSize === 0) {
+      const gap = document.createElement('span');
+      gap.className = 'bit-gap';
+      gap.textContent = ' ';
+      nodes.push(gap);
+    }
   });
+
+  return nodes;
 }
 
 async function updateMemoryBit(address, bitIndex) {
@@ -924,7 +944,7 @@ function updateMemory(data) {
     binCell.innerHTML = '';
     const binary = toBinary(mem.decimal, 8);
     const address = i;
-    const bitSpans = renderClickableBits(binary, (bitIndex) => updateMemoryBit(address, bitIndex));
+    const bitSpans = renderClickableBits(binary, (bitIndex) => updateMemoryBit(address, bitIndex), 4);
     bitSpans.forEach(span => binCell.appendChild(span));
   }
 
@@ -952,7 +972,7 @@ function updateRegisters(data) {
   const acBinEl = acReg.querySelector('.register-binary');
   acBinEl.innerHTML = '';
   const acBinary = toBinary(data.ac, 8);
-  const acBitSpans = renderClickableBits(acBinary, (bitIndex) => updateRegisterBit('ac', bitIndex));
+  const acBitSpans = renderClickableBits(acBinary, (bitIndex) => updateRegisterBit('ac', bitIndex), 4);
   acBitSpans.forEach(span => acBinEl.appendChild(span));
 
   if (state && data.ac !== prevAC) {
@@ -1094,6 +1114,7 @@ async function reset() {
   $('input-history').textContent = '';
   hideInputPrompt();
   initMemory();
+  await initializeEditableState();
   setMode('edit');
 }
 
@@ -1131,8 +1152,7 @@ document.addEventListener('keydown', e => {
 initMemory();
 setMode('edit');
 
-// Initialize CPU state so bits are editable from the start
-(async function initState() {
+async function initializeEditableState() {
   try {
     const res = await apiPost('/api/load', { code: 'halt', input: [] });
     const data = await res.json();
@@ -1140,8 +1160,15 @@ setMode('edit');
       state = data;
       updateMemory(data);
       updateRegisters(data);
+      return true;
     }
   } catch (e) {}
+  return false;
+}
+
+// Initialize CPU state so bits are editable from the start
+(async function initState() {
+  await initializeEditableState();
   setMode('edit');
 })();
 </script>
