@@ -183,6 +183,40 @@ main {
   letter-spacing: 1px;
 }
 
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-btn {
+  flex: none;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mini-btn:hover {
+  background: var(--panel-alt);
+  border-color: var(--border-light);
+  color: var(--text);
+}
+
 .panel-body {
   flex: 1;
   overflow-y: auto;
@@ -657,8 +691,15 @@ button .shortcut {
     <!-- CODE PANEL -->
     <div class="panel">
       <div class="panel-header">
-        Source Code
-        <span class="badge">Assembly</span>
+        <div class="panel-header-left">
+          <span>Source Code</span>
+          <span class="badge">Assembly</span>
+        </div>
+        <div class="panel-header-actions">
+          <input id="file-upload" type="file" style="display:none">
+          <button id="btn-upload" class="mini-btn" type="button">Upload</button>
+          <button id="btn-download" class="mini-btn" type="button">Download</button>
+        </div>
       </div>
       <div class="panel-body">
         <textarea id="code" placeholder="# Type your assembly code here" spellcheck="false"></textarea>
@@ -763,6 +804,11 @@ initTheme();
 
 let state = null;
 let prevAC = 0;
+let statusFlashTimer = null;
+
+const CODE_STORAGE_KEY = 'hymn-source-code';
+const LAST_FILENAME_KEY = 'hymn-last-filename';
+const MAX_UPLOAD_BYTES = 4 * 1024;
 
 const $ = id => document.getElementById(id);
 
@@ -786,6 +832,126 @@ function fromBinary(binStr, bits) {
     val = val - 256;
   }
   return val;
+}
+
+function flashStatus(message, isError = false) {
+  const status = $('status');
+  status.textContent = message;
+  status.className = isError ? 'status halted' : 'status running';
+
+  clearTimeout(statusFlashTimer);
+  statusFlashTimer = setTimeout(() => {
+    if (state) {
+      updateStatus(state);
+    } else {
+      status.textContent = 'Ready';
+      status.className = 'status';
+    }
+  }, 2600);
+}
+
+function persistEditorCode() {
+  localStorage.setItem(CODE_STORAGE_KEY, $('code').value);
+}
+
+function restoreEditorCode() {
+  const saved = localStorage.getItem(CODE_STORAGE_KEY);
+  if (saved !== null) {
+    $('code').value = saved;
+  }
+}
+
+function sanitizeDownloadFilename(name) {
+  if (typeof name !== 'string') return null;
+  let filename = name.trim();
+  if (!filename) return null;
+
+  filename = filename.replace(/[\\/:*?"<>|]/g, '_');
+  return filename.slice(0, 120);
+}
+
+async function readAssemblyFile(file) {
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    throw new Error('No file selected.');
+  }
+  if (file.size === 0) {
+    throw new Error('Selected file is empty.');
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error('File is too large (max 4 KB).');
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (bytes.includes(0)) {
+    throw new Error('File appears to be binary (contains null bytes).');
+  }
+
+  let offset = 0;
+
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    offset = 3;
+  } else if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    throw new Error('UTF-16 files are not supported. Please use UTF-8 plain text.');
+  } else if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    throw new Error('UTF-16 files are not supported. Please use UTF-8 plain text.');
+  }
+
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes.slice(offset));
+  } catch {
+    throw new Error('File is not valid UTF-8 plain text.');
+  }
+
+  const controlChars = text.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g);
+  if (controlChars && controlChars.length > 2) {
+    throw new Error('File appears to contain non-text data.');
+  }
+
+  return text.replace(/\r\n?/g, '\n');
+}
+
+async function uploadCodeFile() {
+  const input = $('file-upload');
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  try {
+    const text = await readAssemblyFile(file);
+    $('code').value = text;
+    persistEditorCode();
+    setMode('edit');
+    flashStatus(`Loaded ${file.name}`);
+  } catch (err) {
+    flashStatus(err.message || 'Could not load file.', true);
+  } finally {
+    input.value = '';
+  }
+}
+
+function downloadCodeFile() {
+  const defaultName = localStorage.getItem(LAST_FILENAME_KEY) || 'program';
+  const entered = window.prompt('Save assembly code as:', defaultName);
+  if (entered === null) return;
+
+  const filename = sanitizeDownloadFilename(entered);
+  if (!filename) {
+    flashStatus('Please enter a valid filename.', true);
+    return;
+  }
+
+  localStorage.setItem(LAST_FILENAME_KEY, filename);
+
+  const blob = new Blob([$('code').value], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  flashStatus(`Saved ${filename}`);
 }
 
 function renderClickableBits(binary, onClick, groupSize = 0) {
@@ -1112,8 +1278,13 @@ $('btn-load').onclick = load;
 $('btn-step').onclick = step;
 $('btn-run').onclick = run;
 $('btn-reset').onclick = reset;
+$('btn-upload').onclick = () => $('file-upload').click();
+$('btn-download').onclick = downloadCodeFile;
 $('theme-toggle').onclick = toggleTheme;
 $('btn-submit-input').onclick = submitInput;
+$('file-upload').onchange = uploadCodeFile;
+$('code').addEventListener('input', persistEditorCode);
+window.addEventListener('beforeunload', persistEditorCode);
 $('input-value').onkeydown = (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -1141,6 +1312,7 @@ document.addEventListener('keydown', e => {
 
 initMemory();
 setMode('edit');
+restoreEditorCode();
 
 async function initializeEditableState() {
   try {
